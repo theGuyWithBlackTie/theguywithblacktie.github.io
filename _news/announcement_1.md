@@ -5,4 +5,4 @@ inline: true
 related_posts: false
 ---
 
-Started working as Machine Learning Engineer at Riversand.
+Started working as Machine Learning Engineer at RiverSand.
