@@ -5,5 +5,4 @@ inline: true
 related_posts: false
 ---
 
-Started working as Machine Learning Scientist
-<!---A simple inline announcement with Markdown emoji! :sparkles: :smile:--->
+Started working as Machine Learning Scientist :rocket:
