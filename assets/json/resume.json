@@ -35,9 +35,11 @@
       "startDate": "2022-02-08",
       "endDate": "2023-08-18",
       "summary": "I worked on developing AI solutions for data deduplication.",
-      "highlights": ["Built an end-to-end machine learning project with data pipelines that return a contrastive learning based neural network model to identify duplicate records in the given database. I used word2vec embeddings with deep neural network in PyTorch to build the model.",
+      "highlights": [
+        "Built an end-to-end machine learning project with data pipelines that return a contrastive learning based neural network model to identify duplicate records in the given database. I used word2vec embeddings with deep neural network in PyTorch to build the model.",
         "I fixed the business problem of address matching for duplicate records’ identification with Named-Entity Recognition(NER). I proposed the NER solution and brought NER model training pipelines into production from scratch and made direct positive impact on customer’s requirement. I used StanfordCoreNLP to build Conditional Random Fields (CRF) based NER model.",
-        "I built ML model for auto columns’ type detection in the given data that accelerated the on-boarding of a new\ncustomer. Used NLP text preprocessing techniques to generate tabular features that fed to the neural\nnetwork to predict the column type."]
+        "I built ML model for auto columns’ type detection in the given data that accelerated the on-boarding of a new\ncustomer. Used NLP text preprocessing techniques to generate tabular features that fed to the neural\nnetwork to predict the column type."
+      ]
     },
     {
       "name": "GE Healthcare",
@@ -46,8 +48,10 @@
       "startDate": "2016-01-04",
       "endDate": "2019-07-25",
       "summary": "I started as a software engineer and later transitioned into Machine Learning based role. While working on software, I built several features using Java.",
-      "highlights": ["Built an BiLSTM-based NER model to detect disease and hence X-Ray test to be taken from the given\nprescription text of the doctor. I used word2vec to generate the embeddings from text. This model reduces the\nmouse-clicks needed to take a X-Ray of a patient.",
-        "Built a time-forecasting model with LSTM and deep neural network to predict the system load (RAM\nand CPU utilization) to take appropriate measures at appropriate time to lower the system load."]
+      "highlights": [
+        "Built an BiLSTM-based NER model to detect disease and hence X-Ray test to be taken from the given\nprescription text of the doctor. I used word2vec to generate the embeddings from text. This model reduces the\nmouse-clicks needed to take a X-Ray of a patient.",
+        "Built a time-forecasting model with LSTM and deep neural network to predict the system load (RAM\nand CPU utilization) to take appropriate measures at appropriate time to lower the system load."
+      ]
     }
   ],
   "education": [
@@ -71,7 +75,16 @@
       "startDate": "2012-07-16",
       "endDate": "2016-06-30",
       "score": "7.2",
-      "courses": ["OOPs", "Data Structures & Algorithm", "Operating Systems", "Database Management", "Computer Networks", "Compiler Design", "Distributed Systems", "Software Engineering"]
+      "courses": [
+        "OOPs",
+        "Data Structures & Algorithm",
+        "Operating Systems",
+        "Database Management",
+        "Computer Networks",
+        "Compiler Design",
+        "Distributed Systems",
+        "Software Engineering"
+      ]
     }
   ],
   "certificates": [
@@ -139,13 +152,7 @@
       "name": "Software Engineering",
       "level": "Master",
       "icon": "fa-solid fa-hashtag",
-      "keywords": [
-        "Object Oriented Programming",
-        "Software Design",
-        "Data Structures",
-        "Algorithms",
-        "Java, Python, C++"
-      ]
+      "keywords": ["Object Oriented Programming", "Software Design", "Data Structures", "Algorithms", "Java, Python, C++"]
     }
   ],
   "languages": [
