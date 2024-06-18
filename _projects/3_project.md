@@ -1,11 +1,11 @@
 ---
 layout: page
-title: project 3 with very long name
-description: a project that redirects to another website
+title: Extreme Multi-Label Text Classification (XMTC)
+description: Developed a hierarchical neural network structure to assign 20,000 Medical Subject Headings (MeSH) tree terms to biomedical papers, overcoming the issue of highly skewed data points for each label. Implemented a combination of Long Short-Term Memory (LSTM) and a fully connected neural network to predict labels at different levels within the MeSH tree.
 img: assets/img/7.jpg
-redirect: https://unsplash.com
+redirect: https://drive.google.com/file/d/1TsdpTlPzROnW0ksVAgVVJKD97-nCiqSY/view?usp=sharing
 importance: 3
-category: work
+category: Masters Projects
 ---
 
 Every project has a beautiful feature showcase page.

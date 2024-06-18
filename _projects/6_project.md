@@ -1,10 +1,10 @@
 ---
 layout: page
-title: project 6
-description: a project with no image
-img:
-importance: 4
-category: fun
+title: Automatic Detection of Atrial Fibrillation (AF) Episodes
+description: Conducted Time Series Analysis on ECG signals to extract features, addressing the challenge of an unbalanced dataset. Evaluated multiple models, providing a conclusive analysis on the effectiveness of certain models and identifying factors contributing to their superior performance.
+img: assets/img/4.jpg
+importance: 1
+category: Personal Projects
 ---
 
 Every project has a beautiful feature showcase page.

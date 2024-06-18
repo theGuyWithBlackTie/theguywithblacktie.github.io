@@ -1,10 +1,10 @@
 ---
 layout: page
-title: project 4
-description: another without an image
-img:
-importance: 3
-category: fun
+title: Text Summarization
+description: Developed an extractive text summarization model utilizing TF-IDF and cosine similarity, providing a hands-on learning experience in comprehensive text preprocessing techniques.
+img: assets/img/1.jpg
+importance: 4
+category: Masters Projects
 ---
 
 Every project has a beautiful feature showcase page.

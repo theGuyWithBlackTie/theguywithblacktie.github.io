@@ -1,11 +1,10 @@
 ---
 layout: page
-title: project 7
-description: with background image
-img: assets/img/4.jpg
-importance: 1
-category: work
-related_publications: true
+title: Generative Adversarial Networks
+description: Constructed a comprehensive and instructive blog tutorial, showcasing the implementation of a Generative Adversarial Network (GAN) to adeptly regenerate handwritten digits. This tutorial provides a hands-on and insightful exploration of GANs, specifically focusing on their application in digit regeneration.
+img: assets/img/1.jpg
+importance: 2
+category: Personal Projects
 ---
 
 Every project has a beautiful feature showcase page.

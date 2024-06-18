@@ -1,11 +1,11 @@
 ---
 layout: page
-title: project 2
-description: a project with a background image and giscus comments
+title: Suggesting Electric Car Charging Stations' Locations
+description: Created a project with the goal of aiding government organizations and companies in identifying optimal locations for electric car charging stations by analyzing big-data datasets containing vehicle routes in coordinate format. Utilized the dataset to determine the most frequently traveled routes within the city, and strategically identified ideal charging station points based on user densities along these high-traffic routes.
 img: assets/img/3.jpg
 importance: 2
-category: work
-giscus_comments: true
+category: Masters Projects
+giscus_comments: false
 ---
 
 Every project has a beautiful feature showcase page.

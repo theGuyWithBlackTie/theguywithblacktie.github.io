@@ -1,11 +1,10 @@
 ---
 layout: page
-title: project 8
-description: an other project with a background image and giscus comments
-img: assets/img/9.jpg
-importance: 2
-category: work
-giscus_comments: true
+title: Neural Machine Translation
+description: Implemented a seq2seq model for German-to-English translation, incorporating an attention mechanism to handle longer text inputs effectively.
+img: assets/img/7.jpg
+importance: 3
+category: Personal Projects
 ---
 
 Every project has a beautiful feature showcase page.
