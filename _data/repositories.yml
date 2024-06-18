@@ -1,12 +1,9 @@
 github_users:
-  - torvalds
-  - alshedivat
+  - theguywithblacktie
 
 github_repos:
-  - alshedivat/al-folio
-  - twbs/bootstrap
-  - jekyll/jekyll
-  - jquery/jquery
-  - FortAwesome/Font-Awesome
-  - jpswalsh/academicons
-  - mathjax/MathJax
+  - theguywithblacktie/Text-Summarization
+  - theguywithblacktie/Deep-Extreme-Multi-Label-Learning
+  - theguywithblacktie/pytorch-BERT-GCN
+  - theguywithblacktie/GAN-PyTorch
+  - theguywithblacktie/flask-app
