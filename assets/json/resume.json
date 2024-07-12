@@ -89,6 +89,20 @@
   ],
   "certificates": [
     {
+      "name": "Finetuning Large Language Models",
+      "date": "2024-07-07",
+      "issuer": "DeepLearning.AI",
+      "url": "https://learn.deeplearning.ai/accomplishments/de04dfa9-bf6d-4c4b-9f42-6ac27a311fac?usp=sharing",
+      "icon": "fa-solid fa-location-dot"
+    },
+    {
+      "name": "Quantization Fundamentals with Hugging Face",
+      "date": "2024-06-10",
+      "issuer": "DeepLearning.AI",
+      "url": "https://learn.deeplearning.ai/accomplishments/b962227b-62e5-40c2-95d3-d43e0d9f68dd?usp=sharing",
+      "icon": "fa-solid fa-location-dot"
+    },
+    {
       "name": "Mathematics for Machine Learning",
       "date": "2018-09-01",
       "issuer": "Imperial College London",
