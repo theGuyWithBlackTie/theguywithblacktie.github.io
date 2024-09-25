@@ -169,18 +169,17 @@ external_sources:
       - url: https://ashishsinghal.io/kernel/machine%20learning/pytorch/2021/05/20/cross-entropy-loss.html
         published_date: 2021-05-20
   - name: SVM
-    rss_url: https://ashishsinghal.io/kernel/machine%20learning/2021/06/06/SVM.html
-  - name: Variable Number of Layers in NN - PyTorch
-    rss_url: https://ashishsinghal.io/kernel/pytorch/2021/05/14/vary-layers-pytorch.html
-  - name: GANs
-    rss_url: https://ashishsinghal.io/kernel/deep%20learning/2021/06/30/GAN.html
-  - name: medium.com
-    rss_url: https://medium.com/@al-folio/feed
-  - name: Google Blog
     posts:
-      - url: https://blog.google/technology/ai/google-gemini-update-flash-ai-assistant-io-2024/
-        published_date: 2024-05-14
-
+      - url: https://ashishsinghal.io/kernel/machine%20learning/2021/06/06/SVM.html
+        published_date: 2021-06-06
+  - name: Variable Number of Layers in NN - PyTorch
+    posts:
+      - url: https://ashishsinghal.io/kernel/pytorch/2021/05/14/vary-layers-pytorch.html
+        published_date: 2021-05-14
+  - name: GANs
+    posts:
+      - url: https://ashishsinghal.io/kernel/deep%20learning/2021/06/30/GAN.html
+        published_date: 2021-06-30
 # -----------------------------------------------------------------------------
 # Collections
 # -----------------------------------------------------------------------------
