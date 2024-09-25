@@ -164,6 +164,14 @@ disqus_shortname: al-folio # put your disqus shortname
 # If you have blog posts published on medium.com or other external sources,
 # you can display them in your blog by adding a link to the RSS feed.
 external_sources:
+  - name: Cross-Entropy Loss and Focal Loss
+    rss_url: https://ashishsinghal.io/kernel/machine%20learning/pytorch/2021/05/20/cross-entropy-loss.html
+  - name: SVM
+    rss_url: https://ashishsinghal.io/kernel/machine%20learning/2021/06/06/SVM.html
+  - name: Variable Number of Layers in NN - PyTorch
+    rss_url: https://ashishsinghal.io/kernel/pytorch/2021/05/14/vary-layers-pytorch.html
+  - name: GANs
+    rss_url: https://ashishsinghal.io/kernel/deep%20learning/2021/06/30/GAN.html
   - name: medium.com
     rss_url: https://medium.com/@al-folio/feed
   - name: Google Blog
