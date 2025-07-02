@@ -186,6 +186,9 @@ defaults:
       path: _drafts
     values:
       comments: false
+      layout: post
+      toc: true
+      permalink: /drafts/:title/
   - scope:
       path: ""
       type: tabs # see `site.collections`
