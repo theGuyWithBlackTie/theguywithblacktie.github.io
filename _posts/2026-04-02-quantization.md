@@ -55,6 +55,7 @@ As you can see, as we reduce the number of bits, we also reduce the range and pr
 
 ## How Memory Is Calculated
 Eachh parameter is a model is stored as a number in a given data type, and each data type uses a fixed number of bits. So, the memory usage of a model can be calculated using the formula:
+
 $$\text{Memory Usage} = \frac{\text{Number of Parameters} \times \text{Bits per Parameter}}{8} \text{ bytes}$$
 Where:
 - <b>Number of Parameters</b> is the total number of weights and biases in the model.
@@ -113,15 +114,63 @@ Among the given list of values, $10.8$ is the highest absolute value, so $\alpha
 Since it is a linear mapping centered around zero, the process of quantization is straightforward.
 
 We first calculate the scale factor ($s$) which determines how much we need to scale down the original values to fit into the range of the target data type. The formula for calculating the scale factor in symmetric quantization is:
+
 $$S = \frac{2^{b-1} - 1}{\alpha}$$
 Where:
-- $s$ is the scale factor.
+- $S$ is the scale factor.
 - $b$ is the number of bits in the target data type (e.g., 8 for INT8).
 - $\alpha$ is the maximum absolute value in the original data (e.g., the weights or activations).
 
 Then, we can quantize the original value ($x$) to the quantized value ($q$) using the formula:
+
 $$X_{quantized} = \text{round}({S}\times{X})$$
 
 Filling in the values would give us:
+
 $$S = \frac{2^{8-1} - 1}{10.8} = \frac{127}{10.8} \approx 11.76$$
+
 $$X_{quantized} = \text{round}(11.76 \times X)$$
+
+### Asymmetric Quantization
+In asymmetric quantization, the mapping is not centered around zero. Instead, it maps the minimum <b>$\beta$</b> and maximum <b>$\alpha$</b> values of the original data to the minimum and maximum values of the quantized data type, respectively.
+
+The method we are going to explore is called <i>zero-point quantization</i>.
+
+![A diagram showing asymmetric quantization mapping the range of original values to a non-symmetric range in the quantized space.](assets/img/quantization/asymmetric_quantization_example.png)
+
+Notice how the $0$ has shifted positions? That's why its called <i>asymmetric quantization</i>. The min/max values have different distances to 0 in the range [-7.59, 10.8]|
+
+#### Asymmetric Quantization Algorithm
+Due to its shifted position, we have to calculate the zero-point for the INT8 range to perform the linear mapping. As well as the <i>scale factor</i> but by using the difference of INT8's max and min values.
+
+The formula for calculating the scale factor in asymmetric quantization is:
+
+$$S = \frac{128 - -127}{\alpha - \beta} = \frac{255}{\alpha - \beta}$$
+Where:
+- $S$ is the scale factor.
+- $\alpha$ is the maximum value in the original data.
+- $\beta$ is the minimum value in the original data.
+
+Then, we calculate the zero-point ($Z$) using the formula:
+
+$$Z = \text{round}(-S \times \beta) - 2^{b-1}$$
+
+Finally, we can quantize the original value ($X$) to the quantized value ($X_{quantized}$) using the formula:
+
+$$X_{quantized} = \text{round}(S \times X) + Z$$
+
+Filling in the values would give us:
+
+$$S = \frac{255}{10.8 - (-7.59)} = \frac{255}{17.39} \approx 13.86$$
+
+$$Z = \text{round}(-13.86 \times -7.59) - 128 = \text{round}(105.17) - 128 = 105 - 128 = -23$$
+
+$$X_{quantized} = \text{round}(13.86 \times X) - 23$$
+
+The dequantization process (converting back to the original data type) is done using the formula:
+
+$$X_{dequantized} = \frac{X_{quantized} - Z}{S}$$
+
+Where:
+- $X_{dequantized}$ is the dequantized value.
+- $X_{quantized}$ is the quantized value.
