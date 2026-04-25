@@ -8,7 +8,7 @@ toc: true
 image:
     path: assets/headers/dspy-header.png
     alt: Quantization
-published: false
+published: true
 categories: [LLMs, Quantization]
 tags: [optimization, quantization techniques]
 ---
@@ -96,3 +96,18 @@ In this example, we create a random tensor of shape (1000, 1000) which has 1 mil
 In practice, we do not need to map the entire FP32 range [-3.4e38, 3.4e38] to the smaller range of INT8 [-128, 127]. Instead, we need to find a way to map <i>the range of our data (the model's paramters and activations)</i> to the smaller range of the target data type.
 
 Symmetric & Asymmetric Quantization are two common techniques for doing this mapping and are forms of <i>linear mapping</i>.
+
+### Symmetric Quantization
+In symmetric quantization, the range of the original values is mapped to a symmetric range around zero in the quantized space. This means that the quantized value for zero in the original data type space is exactly zero in the quantized space.
+
+![A diagram showing symmetric quantization mapping the range of original values to a symmetric range around zero in the quantized space.](assets/img/quantization/symmetric_quant_concept.png)
+In symmetric quantization, we assume that the data is centered around zero and we use the same scale factor for both positive and negative values. The formula for symmetric quantization is:
+$$q = \text{round}\left(\frac{x}{s}\right)$$
+Where:
+- $q$ is the quantized value (e.g., an INT8 value).
+- $x$ is the original floating point value (e.g., an FP32 value).
+- $s$ is the scale factor, which is calculated as:
+$$s = \frac{\max(|x_{\text{min}}|, |x_{\text{max}}|)}{2^{b-1} - 1}$$
+Where:
+- $x_{\text{min}}$ and $x_{\text{max}}$ are the minimum and maximum values in the data (e.g., the weights or activations).
+- $b$ is the number of bits in the target data type (e.g., 8 for INT8).
