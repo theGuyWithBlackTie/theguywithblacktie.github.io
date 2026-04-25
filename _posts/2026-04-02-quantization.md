@@ -62,6 +62,7 @@ Where:
 - We divide by 8 to convert bits to bytes.
 
 Let's take a 7 billion paramter model as an example:
+
 | Data Type | Bits per Parameter | Calculation | Memory Usage (GB) |
 |-----------|--------------------|-------------|-------------------|
 | FP32      | 32                 | (7e9 * 32) / 8 | 28 GB |
@@ -101,13 +102,26 @@ Symmetric & Asymmetric Quantization are two common techniques for doing this map
 In symmetric quantization, the range of the original values is mapped to a symmetric range around zero in the quantized space. This means that the quantized value for zero in the original data type space is exactly zero in the quantized space.
 
 ![A diagram showing symmetric quantization mapping the range of original values to a symmetric range around zero in the quantized space.](assets/img/quantization/symmetric_quant_concept.png)
-In symmetric quantization, we assume that the data is centered around zero and we use the same scale factor for both positive and negative values. The formula for symmetric quantization is:
-$$q = \text{round}\left(\frac{x}{s}\right)$$
+
+An example of symmetric quantization is <b>absolute maximum <i>(absmax)</i> quantization</b>, where given a list of values, the <i>highest</i> absolute value (<b>$\alpha$</b>) is taken as the range to perform the linear mapping, as shown in the diagram below:
+
+![An illustration of absolute maximum (absmax) quantization, where the scale factor is determined by the maximum absolute value in the data.](assets/img/quantization/symmetric_quantization_example.png)
+
+Among the given list of values, $10.8$ is the highest absolute value, so $\alpha$ is set to $10.8$ and while quantizing the <i>FP-32</i> to <i>INT-8</i>, $10.8$ will be mapped to $127$ and $-10.8$ will be mapped to $-127$ while maintianing symmetry around $0$.
+
+#### Symmetric Quantization Algorithm
+Since it is a linear mapping centered around zero, the process of quantization is straightforward.
+
+We first calculate the scale factor ($s$) which determines how much we need to scale down the original values to fit into the range of the target data type. The formula for calculating the scale factor in symmetric quantization is:
+$$S = \frac{2^{b-1} - 1}{\alpha}$$
 Where:
-- $q$ is the quantized value (e.g., an INT8 value).
-- $x$ is the original floating point value (e.g., an FP32 value).
-- $s$ is the scale factor, which is calculated as:
-$$s = \frac{\max(|x_{\text{min}}|, |x_{\text{max}}|)}{2^{b-1} - 1}$$
-Where:
-- $x_{\text{min}}$ and $x_{\text{max}}$ are the minimum and maximum values in the data (e.g., the weights or activations).
+- $s$ is the scale factor.
 - $b$ is the number of bits in the target data type (e.g., 8 for INT8).
+- $\alpha$ is the maximum absolute value in the original data (e.g., the weights or activations).
+
+Then, we can quantize the original value ($x$) to the quantized value ($q$) using the formula:
+$$X_{quantized} = \text{round}({S}\times{X})$$
+
+Filling in the values would give us:
+$$S = \frac{2^{8-1} - 1}{10.8} = \frac{127}{10.8} \approx 11.76$$
+$$X_{quantized} = \text{round}(11.76 \times X)$$
