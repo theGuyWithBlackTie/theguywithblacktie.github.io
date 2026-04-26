@@ -138,7 +138,7 @@ The method we are going to explore is called <i>zero-point quantization</i>.
 
 ![A diagram showing asymmetric quantization mapping the range of original values to a non-symmetric range in the quantized space.](assets/img/quantization/asymmetric_quantization_example.png)
 
-Notice how the $0$ has shifted positions? That's why its called <i>asymmetric quantization</i>. The min/max values have different distances to 0 in the range [-7.59, 10.8]|
+Notice how the $0$ has shifted positions? That's why its called <i>asymmetric quantization</i>. The min/max values have different distances to 0 in the range [-7.59, 10.8]
 
 #### Asymmetric Quantization Algorithm
 Due to its shifted position, we have to calculate the zero-point for the INT8 range to perform the linear mapping. As well as the <i>scale factor</i> but by using the difference of INT8's max and min values.
@@ -194,3 +194,15 @@ In the above image, the outlier value $(256)$ causes the scale factor be be very
 To fix this, we can choose to <i>clip</i> certain values. Clipping involves setting a different range of te original values such that all outliers get the same value. In the example below, if we were to manually set the range to [-5, 5] all values outside that will be either mapped to $-127$ or to $127$ regardless of their value.
 
 ![A diagram showing the effect of clipping on the original data values to mitigate the impact of outliers.](assets/img/quantization/range_clipping_solution.png)
+
+In the above image, by clipping the original data values to a range of [-5, 5], we can mitigate the impact of the outlier (256) and allow the other values to be mapped to a wider range in the quantized space, thus preserving more information about those values.
+
+#### Calibration
+The process of determining the appropriate clipping range is called <i>calibration</i>. Calibration can be done using different methods, such as:
+- **Percentile Calibration**: This method uses percentiles of the data to determine the clipping range. For example, we can choose to clip values above the 99th percentile and below the 1st percentile. This method is more robust to outliers, as it focuses on the distribution of the majority of the data rather than being influenced by extreme values.
+- **KL Divergence Calibration**: This method uses the Kullback-Leibler divergence to measure the difference between the original data distribution and the quantized data distribution. The clipping range is determined by <b<<i>minimizing</i></b> the KL divergence, which helps to preserve the overall distribution of the data in the quantized space.
+- **MSE Calibration**: This method uses the mean squared error to measure the difference between the original data and the quantized data. The clipping range is determined by minimizing the MSE, which helps to preserve the accuracy of the quantized values compared to the original values.
+
+> Performing calibration step is not same for all types of parameters.
+{: .prompt-info} 
+
