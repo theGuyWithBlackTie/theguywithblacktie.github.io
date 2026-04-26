@@ -13,14 +13,14 @@ categories: [LLMs, Quantization]
 tags: [optimization, quantization techniques]
 ---
 
-# Introduction
+## Introduction
 Imagine you want to run Llama 2 70B on your machine. There's just one problem: in its native FP32 precision, the model weights alone take up roughly 280GB of RAM memory and additional memory of around 20GB for context which grows with sequence length. That's more than most high-end GPUs can handle, let alone a laptop.
 
 Now what if you could shrink the moel down to 35GB or even 17GB withougb losing much of its quality?
 
 That's what quanitzation does. It is the process of reducing the numerical precision of a model's weights and activations (for e.g. converting 32-bit floating point numbers to 8-bit integers) so that model gets smaller and its need less memory and compute to run. 
 
-# Number Representation & Data Types
+## Number Representation & Data Types
 Before we can shrink a model, we need to understadn what we are shrinking. AI models internally performs mathematical operations on weights and activations, and how those parameters are stored determines both the precision & accuracy of the results and the memory model consumes.
 
 Weights & activations are stored in <i>floating point</i> format, which has three components:
@@ -138,7 +138,6 @@ The method we are going to explore is called <i>zero-point quantization</i>.
 
 ![A diagram showing asymmetric quantization mapping the range of original values to a non-symmetric range in the quantized space.](assets/img/quantization/asymmetric_quantization_example.png)
 
-
 Notice how the $0$ has shifted positions? That's why its called <i>asymmetric quantization</i>. The min/max values have different distances to 0 in the range [-7.59, 10.8]|
 
 #### Asymmetric Quantization Algorithm
@@ -146,11 +145,12 @@ Due to its shifted position, we have to calculate the zero-point for the INT8 ra
 
 The formula for calculating the scale factor in asymmetric quantization is:
 
-$$S = \frac{128 - -127}{\alpha - \beta} = \frac{255}{\alpha - \beta}$$
-Where:
-- $S$ is the scale factor.
-- $\alpha$ is the maximum value in the original data.
-- $\beta$ is the minimum value in the original data.
+$$\begin{aligned}& S = \frac{128 - -127}{\alpha - \beta} = \frac{255}{\alpha - \beta}\\
+\text{Where:}\\
+& S\text{ is the scale factor.}\\
+& \alpha\text{ is the maximum value in the original data.}\\
+& \beta\text{ is the minimum value in the original data.}\\
+\end{aligned}$$
 
 Then, we calculate the zero-point ($Z$) using the formula:
 
@@ -162,15 +162,30 @@ $$X_{quantized} = \text{round}(S \times X) + Z$$
 
 Filling in the values would give us:
 
-$$S = \frac{255}{10.8 - (-7.59)} = \frac{255}{17.39} \approx 13.86$$
+$$\begin{aligned}& S = \frac{255}{10.8 - (-7.59)} = \frac{255}{17.39} \approx 13.86\\
 
-$$Z = \text{round}(-13.86 \times -7.59) - 128 = \text{round}(105.17) - 128 = 105 - 128 = -23$$
+& Z = \text{round}(-13.86 \times -7.59) - 128 = \text{round}(105.17) - 128 = 105 - 128 = -23\\
 
-$$X_{quantized} = \text{round}(13.86 \times X) - 23$$
+& X_{quantized} = \text{round}(13.86 \times X) - 23
+\end{aligned}$$
 
 The dequantization process (converting back to the original data type) is done using the formula:
 
-$$X_{dequantized} = \frac{X_{quantized} - Z}{S}\\
-\text{Where:}\\
-X_{dequantized} \text{ is the dequantized value.}\\
-X_{quantized} \text{ is the quantized value.}$$
+$$X_{dequantized} = \frac{X_{quantized} - Z}{S}$$
+$$ \begin{aligned}
+    \text{where: } & X_{dequantized} \text{ is the dequantized value.}\\
+    & X_{quantized} \text{ is the quantized value.}
+\end{aligned}$$
+
+### Range Mapping & Clipping
+In previous examples of symmetric and asymmetric quantization, we explored how the range of values in a given vector are mapped to a lower-bit representation. This approach allows full range of vector values to be mapped, it introduces a significant downside: <i>outliers</i>.
+
+Suppose there is a vector with the following values:
+
+![A diagram showing a vector of values to be quantized.](assets/img/quantization/range_clipping_example.png)
+
+Notice that one value is significantly larger than the others and effectively acting as an outlier. When we perform quantization, the presence of this outlier will cause the scale factor to be much smaller, which means that the other values will be mapped to a very narrow range in the quantized space. This can lead to a significant loss of information for those values, as they will all be mapped to the same or similar quantized value.
+
+![A diagram showing the effect of outlier from orignal data values on the quantized space.](assets/img/quantization/range_clipping_effect.png)
+
+In the abvoe image, the outlier value $(256)$ causes the scale factor be be very small, which leads to all other smaller values getting mapped to the same lower-bit representation (e.g., 0 in INT8), resulting in a loss of information of those values.
