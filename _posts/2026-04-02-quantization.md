@@ -138,6 +138,7 @@ The method we are going to explore is called <i>zero-point quantization</i>.
 
 ![A diagram showing asymmetric quantization mapping the range of original values to a non-symmetric range in the quantized space.](assets/img/quantization/asymmetric_quantization_example.png)
 
+
 Notice how the $0$ has shifted positions? That's why its called <i>asymmetric quantization</i>. The min/max values have different distances to 0 in the range [-7.59, 10.8]|
 
 #### Asymmetric Quantization Algorithm
@@ -169,8 +170,7 @@ $$X_{quantized} = \text{round}(13.86 \times X) - 23$$
 
 The dequantization process (converting back to the original data type) is done using the formula:
 
-$$X_{dequantized} = \frac{X_{quantized} - Z}{S}$$
-
-Where:
-- $X_{dequantized}$ is the dequantized value.
-- $X_{quantized}$ is the quantized value.
+$$X_{dequantized} = \frac{X_{quantized} - Z}{S}\\
+\text{Where:}\\
+X_{dequantized} \text{ is the dequantized value.}\\
+X_{quantized} \text{ is the quantized value.}$$
