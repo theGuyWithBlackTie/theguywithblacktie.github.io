@@ -146,7 +146,7 @@ Due to its shifted position, we have to calculate the zero-point for the INT8 ra
 The formula for calculating the scale factor in asymmetric quantization is:
 
 $$\begin{aligned}& S = \frac{128 - -127}{\alpha - \beta} = \frac{255}{\alpha - \beta}\\
-\text{Where:}\\
+\text{where:}\\
 & S\text{ is the scale factor.}\\
 & \alpha\text{ is the maximum value in the original data.}\\
 & \beta\text{ is the minimum value in the original data.}\\
@@ -171,9 +171,10 @@ $$\begin{aligned}& S = \frac{255}{10.8 - (-7.59)} = \frac{255}{17.39} \approx 13
 
 The dequantization process (converting back to the original data type) is done using the formula:
 
-$$X_{dequantized} = \frac{X_{quantized} - Z}{S}$$
-$$ \begin{aligned}
-    \text{where: } & X_{dequantized} \text{ is the dequantized value.}\\
+$$ \begin{aligned} & X_{dequantized} = \frac{X_{quantized} - Z}{S} \\
+
+    \text{where: }\\
+    & X_{dequantized} \text{ is the dequantized value.}\\
     & X_{quantized} \text{ is the quantized value.}
 \end{aligned}$$
 
@@ -188,4 +189,8 @@ Notice that one value is significantly larger than the others and effectively ac
 
 ![A diagram showing the effect of outlier from orignal data values on the quantized space.](assets/img/quantization/range_clipping_effect.png)
 
-In the abvoe image, the outlier value $(256)$ causes the scale factor be be very small, which leads to all other smaller values getting mapped to the same lower-bit representation (e.g., 0 in INT8), resulting in a loss of information of those values.
+In the above image, the outlier value $(256)$ causes the scale factor be be very small, which leads to all other smaller values getting mapped to the same lower-bit representation (e.g., 0 in INT8), resulting in a loss of information of those values.
+
+To fix this, we can choose to <i>clip</i> certain values. Clipping involves setting a different range of te original values such that all outliers get the same value. In the example below, if we were to manually set the range to [-5, 5] all values outside that will be either mapped to $-127$ or to $127$ regardless of their value.
+
+![A diagram showing the effect of clipping on the original data values to mitigate the impact of outliers.](assets/img/quantization/range_clipping_solution.png)
