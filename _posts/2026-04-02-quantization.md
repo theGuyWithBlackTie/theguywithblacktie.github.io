@@ -16,24 +16,24 @@ tags: [optimization, quantization techniques]
 ## Introduction
 Imagine you want to run Llama 2 70B on your machine. There's just one problem: in its native FP32 precision, the model weights alone take up roughly 280GB of RAM memory and additional memory of around 20GB for context which grows with sequence length. That's more than most high-end GPUs can handle, let alone a laptop.
 
-Now what if you could shrink the moel down to 35GB or even 17GB withougb losing much of its quality?
+Now what if you could shrink the model down to 35GB or even 17GB without losing much of its quality?
 
 That's what quanitzation does. It is the process of reducing the numerical precision of a model's weights and activations (for e.g. converting 32-bit floating point numbers to 8-bit integers) so that model gets smaller and its need less memory and compute to run. 
 
 ## Number Representation & Data Types
-Before we can shrink a model, we need to understadn what we are shrinking. AI models internally performs mathematical operations on weights and activations, and how those parameters are stored determines both the precision & accuracy of the results and the memory model consumes.
+Before we can shrink a model, we need to understand what we are shrinking. AI models internally performs mathematical operations on weights and activations, and how those parameters are stored determines both the precision & accuracy of the results and the memory model consumes.
 
 Weights & activations are stored in <i>floating point</i> format, which has three components:
 - **Sign bit**: Indicates whether the number is positive or negative.
 - **Exponent**: Determines the range of the number (how large or small it can be).
-- **Mantissa (or significand)**: Represents the precision of the number (how many decimal places it can have).
+- **Mantissa (or significant)**: Represents the precision of the number (how many decimal places it can have).
 
 More bits means more room for the <i>exponent</i> and <i>mantissa</i>, which allows for a wider range of values and greater precision. For example, FP32 (32-bit floating point) has 1 sign bit, 8 bits for the exponent, and 23 bits for the mantissa, while FP16 (16-bit floating point) has 1 sign bit, 5 bits for the exponent, and 10 bits for the mantissa.
 
 > <b>Precision</b> refers to the number of significant figures or decimal places a number can represent. In floating point numbers, precision is determined by the mantissa—more bits in the mantissa mean finer granularity and better accuracy for decimal values.
 {: .prompt-info}
 
-## Bits Spectrum
+### Bits Spectrum
 Here's how the common data types compare:
 
 | Data Type | Total Bits | Sign Bits | Exponent Bits | Mantissa Bits | Range of Values | Memory Usage |
@@ -53,8 +53,8 @@ A few things to notice:
 
 As you can see, as we reduce the number of bits, we also reduce the range and precision of the values we can represent. This is the trade-off that quantization makes: by using fewer bits, we can save memory and computational resources, but we may lose some accuracy in the process.
 
-## How Memory Is Calculated
-Eachh parameter is a model is stored as a number in a given data type, and each data type uses a fixed number of bits. So, the memory usage of a model can be calculated using the formula:
+### How Memory Is Calculated
+Each parameter is a model is stored as a number in a given data type, and each data type uses a fixed number of bits. So, the memory usage of a model can be calculated using the formula:
 
 $$\text{Memory Usage} = \frac{\text{Number of Parameters} \times \text{Bits per Parameter}}{8} \text{ bytes}$$
 Where:
@@ -62,7 +62,7 @@ Where:
 - <b>Bits per Parameter</b> is the number of bits used to represent each parameter (e.g., 32 for FP32, 16 for FP16, 8 for INT8, etc.).
 - We divide by 8 to convert bits to bytes.
 
-Let's take a 7 billion paramter model as an example:
+Let's take a 7 billion parameter model as an example:
 
 | Data Type | Bits per Parameter | Calculation | Memory Usage (GB) |
 |-----------|--------------------|-------------|-------------------|
@@ -76,7 +76,7 @@ Let's take a 7 billion paramter model as an example:
 
 As you can see, by reducing the precision of the data type, we can significantly reduce the memory usage of the model, especially for large models with billions of parameters, where the memory requirements can quickly become unmanageable.
 
-## Seeing it in Code-Action
+### Seeing it in Code-Action
 
 ```python
 import torch
@@ -92,10 +92,10 @@ FP32: 4.00 MB
 FP16: 2.00 MB
 INT8: 1.00 MB
 ```
-In this example, we create a random tensor of shape (1000, 1000) which has 1 million elements. We then calculate the memory usage for FP32, FP16, and INT8 formats. As you can see, the memory usage decreases as we reduce the precision of the data type. Same tesnor, same shape but 4x less memory just by changing the data type. Now if we scale this to a model with billions of parameters, the memory savings become significant, allowing us to run larger models on hardware with limited resources.
+In this example, we create a random tensor of shape (1000, 1000) which has 1 million elements. We then calculate the memory usage for FP32, FP16, and INT8 formats. As you can see, the memory usage decreases as we reduce the precision of the data type. Same tensor, same shape but 4x less memory just by changing the data type. Now if we scale this to a model with billions of parameters, the memory savings become significant, allowing us to run larger models on hardware with limited resources.
 
-## Quantization Techniques
-In practice, we do not need to map the entire FP32 range [-3.4e38, 3.4e38] to the smaller range of INT8 [-128, 127]. Instead, we need to find a way to map <i>the range of our data (the model's paramters and activations)</i> to the smaller range of the target data type.
+## Quantization Schemes
+In practice, we do not need to map the entire FP32 range [-3.4e38, 3.4e38] to the smaller range of INT8 [-128, 127]. Instead, we need to find a way to map <i>the range of our data (the model's parameters and activations)</i> to the smaller range of the target data type.
 
 Symmetric & Asymmetric Quantization are two common techniques for doing this mapping and are forms of <i>linear mapping</i>.
 
@@ -200,7 +200,7 @@ In the above image, by clipping the original data values to a range of [-5, 5], 
 #### Calibration
 The process of determining the appropriate clipping range is called <i>calibration</i>. Calibration can be done using different methods, such as:
 - **Percentile Calibration**: This method uses percentiles of the data to determine the clipping range. For example, we can choose to clip values above the 99th percentile and below the 1st percentile. This method is more robust to outliers, as it focuses on the distribution of the majority of the data rather than being influenced by extreme values.
-- **KL Divergence Calibration**: This method uses the Kullback-Leibler divergence to measure the difference between the original data distribution and the quantized data distribution. The clipping range is determined by <b<<i>minimizing</i></b> the KL divergence, which helps to preserve the overall distribution of the data in the quantized space.
+- **KL Divergence Calibration**: This method uses the Kullback-Leibler divergence to measure the difference between the original data distribution and the quantized data distribution. The clipping range is determined by <b<i>minimizing</i></b> the KL divergence, which helps to preserve the overall distribution of the data in the quantized space.
 - **MSE Calibration**: This method uses the mean squared error to measure the difference between the original data and the quantized data. The clipping range is determined by minimizing the MSE, which helps to preserve the accuracy of the quantized values compared to the original values.
 
 > Performing calibration step is not same for all types of parameters.
