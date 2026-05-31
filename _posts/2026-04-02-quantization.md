@@ -95,9 +95,9 @@ INT8: 1.00 MB
 In this example, we create a random tensor of shape (1000, 1000) which has 1 million elements. We then calculate the memory usage for FP32, FP16, and INT8 formats. As you can see, the memory usage decreases as we reduce the precision of the data type. Same tensor, same shape but 4x less memory just by changing the data type. Now if we scale this to a model with billions of parameters, the memory savings become significant, allowing us to run larger models on hardware with limited resources.
 
 ## Quantization Schemes
-In practice, we do not need to map the entire FP32 range [-3.4e38, 3.4e38] to the smaller range of INT8 [-128, 127]. Instead, we need to find a way to map <i>the range of our data (the model's parameters and activations)</i> to the smaller range of the target data type.
+In practice, we do not need to map the entire FP32 range [-3.4e38, 3.4e38] to the smaller range of INT8 [-128, 127]. Instead, we need to find a way to map <b><i>the range of our data (the model's parameters and activations)</i></b> to the smaller range of the target data type.
 
-Symmetric & Asymmetric Quantization are two common techniques for doing this mapping and are forms of <i>linear mapping</i>.
+Symmetric & Asymmetric Quantization are two common schemes for doing this mapping and are forms of <i>linear mapping</i>.
 
 ### Symmetric Quantization
 In symmetric quantization, the range of the original values is mapped to a symmetric range around zero in the quantized space. This means that the quantized value for zero in the original data type space is exactly zero in the quantized space.
@@ -191,7 +191,7 @@ Notice that one value is significantly larger than the others and effectively ac
 
 In the above image, the outlier value $(256)$ causes the scale factor be be very small, which leads to all other smaller values getting mapped to the same lower-bit representation (e.g., 0 in INT8), resulting in a loss of information of those values.
 
-To fix this, we can choose to <i>clip</i> certain values. Clipping involves setting a different range of te original values such that all outliers get the same value. In the example below, if we were to manually set the range to [-5, 5] all values outside that will be either mapped to $-127$ or to $127$ regardless of their value.
+To fix this, we can choose to <i>clip</i> certain values. Clipping involves setting a different range of the original values such that all outliers get the same value. In the example below, if we were to manually set the range to [-5, 5] all values outside that will be either mapped to $-127$ or to $127$ regardless of their value.
 
 ![A diagram showing the effect of clipping on the original data values to mitigate the impact of outliers.](assets/img/quantization/range_clipping_solution.png)
 
@@ -200,9 +200,9 @@ In the above image, by clipping the original data values to a range of [-5, 5], 
 #### Calibration
 The process of determining the appropriate clipping range is called <i>calibration</i>. Calibration can be done using different methods, such as:
 - **Percentile Calibration**: This method uses percentiles of the data to determine the clipping range. For example, we can choose to clip values above the 99th percentile and below the 1st percentile. This method is more robust to outliers, as it focuses on the distribution of the majority of the data rather than being influenced by extreme values.
-- **KL Divergence Calibration**: This method uses the Kullback-Leibler divergence to measure the difference between the original data distribution and the quantized data distribution. The clipping range is determined by <b<i>minimizing</i></b> the KL divergence, which helps to preserve the overall distribution of the data in the quantized space.
+- **KL Divergence Calibration**: This method uses the Kullback-Leibler divergence to measure the difference between the original data distribution and the quantized data distribution. The clipping range is determined by <b><i>minimizing</i></b> the KL divergence, which helps to preserve the overall distribution of the data in the quantized space.
 - **MSE Calibration**: This method uses the mean squared error to measure the difference between the original data and the quantized data. The clipping range is determined by minimizing the MSE, which helps to preserve the accuracy of the quantized values compared to the original values.
 
-> Performing calibration step is not same for all types of parameters.
+> Performing calibration step is not same for all types of parameters. <b><i>Weights</i><b> are static and do not change during inference, so we can perform calibration once on a representative dataset and use the same clipping range for all inferences. <b><i>Activations</i></b>, on the other hand, can vary significantly depending on the input data and the layer of the model, so we may need to perform calibration dynamically during <i>inference</i> to determine the appropriate clipping range for each batch of data.
 {: .prompt-info} 
 
