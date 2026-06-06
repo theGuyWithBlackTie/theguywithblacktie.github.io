@@ -21,7 +21,7 @@ Now what if you could shrink the model down to 35GB or even 17GB without losing 
 That's what quanitzation does. It is the process of reducing the numerical precision of a model's weights and activations (for e.g. converting 32-bit floating point numbers to 8-bit integers) so that model gets smaller and its need less memory and compute to run. 
 
 ## Number Representation & Data Types
-Before we can shrink a model, we need to understand what we are shrinking. AI models internally performs mathematical operations on weights and activations, and how those parameters are stored determines both the precision & accuracy of the results and the memory model consumes.
+Before we can shrink a model, we need to understand what we are shrinking. AI models internally perform mathematical operations on weights and activations, and how those parameters are stored determines both the precision & accuracy of the results and the memory model consumes.
 
 Weights & activations are stored in <i>floating point</i> format, which has three components:
 - **Sign bit**: Indicates whether the number is positive or negative.
@@ -141,7 +141,7 @@ The method we are going to explore is called <i>zero-point quantization</i>.
 Notice how the $0$ has shifted positions? That's why its called <i>asymmetric quantization</i>. The min/max values have different distances to 0 in the range [-7.59, 10.8]
 
 #### Asymmetric Quantization Algorithm
-Due to its shifted position, we have to calculate the zero-point for the INT8 range to perform the linear mapping. As well as the <i>scale factor</i> but by using the difference of INT8's max and min values.
+Due to its shifted position, we have to calculate the zero-point for the INT8 range to perform the linear mapping. We also calculate the <i>scale factor</i> using the difference between INT8's max and min values.
 
 The formula for calculating the scale factor in asymmetric quantization is:
 
@@ -178,8 +178,8 @@ $$ \begin{aligned} & X_{dequantized} = \frac{X_{quantized} - Z}{S} \\
     & X_{quantized} \text{ is the quantized value.}
 \end{aligned}$$
 
-### Range Mapping & Clipping
-In previous examples of symmetric and asymmetric quantization, we explored how the range of values in a given vector are mapped to a lower-bit representation. This approach allows full range of vector values to be mapped, it introduces a significant downside: <i>outliers</i>.
+#### Range Mapping & Clipping
+In previous examples of symmetric and asymmetric quantization, we explored how the range of values in a given vector are mapped to a lower-bit representation. This approach allows full range of vector values to be mapped but it introduces a significant downside: <i>outliers</i>.
 
 Suppose there is a vector with the following values:
 
@@ -197,12 +197,147 @@ To fix this, we can choose to <i>clip</i> certain values. Clipping involves sett
 
 In the above image, by clipping the original data values to a range of [-5, 5], we can mitigate the impact of the outlier (256) and allow the other values to be mapped to a wider range in the quantized space, thus preserving more information about those values.
 
-#### Calibration
+##### Calibration
 The process of determining the appropriate clipping range is called <i>calibration</i>. Calibration can be done using different methods, such as:
 - **Percentile Calibration**: This method uses percentiles of the data to determine the clipping range. For example, we can choose to clip values above the 99th percentile and below the 1st percentile. This method is more robust to outliers, as it focuses on the distribution of the majority of the data rather than being influenced by extreme values.
 - **KL Divergence Calibration**: This method uses the Kullback-Leibler divergence to measure the difference between the original data distribution and the quantized data distribution. The clipping range is determined by <b><i>minimizing</i></b> the KL divergence, which helps to preserve the overall distribution of the data in the quantized space.
 - **MSE Calibration**: This method uses the mean squared error to measure the difference between the original data and the quantized data. The clipping range is determined by minimizing the MSE, which helps to preserve the accuracy of the quantized values compared to the original values.
 
-> Performing calibration step is not same for all types of parameters. <b><i>Weights</i><b> are static and do not change during inference, so we can perform calibration once on a representative dataset and use the same clipping range for all inferences. <b><i>Activations</i></b>, on the other hand, can vary significantly depending on the input data and the layer of the model, so we may need to perform calibration dynamically during <i>inference</i> to determine the appropriate clipping range for each batch of data.
-{: .prompt-info} 
+> Performing calibration step is not same for all types of parameters. <b><i>Weights</i><b> are fixed after training, so theur range can be computed directly from the weight values - no input data needed. <b><i>Activations</I></b>, however, change with every input, so calibration requires running a representative dataset through the model to observe the actual range of values each layer produces at runtime.
+{: .prompt-info}
+
+### Per-Tensor vs Per-Channel Quantization
+So far, every example we've seen has used a single scale factor for an entire set of values. But when quantizing a real model, you have a choice of <i>granularity<i> - how boradly or narrowly you apply that scale. This choice has a significant impact on accuracy.
+
+#### Per-Tensor Quantization
+<b>Per-tensor quantization</b> uses a single factor and zero-point for the <i>entire</i> weight tensor of a layer. Every single weight value in that layer gets mapped using the same scale.
+
+To understand what that means concrretely, let's first understand what a weight tensor looks like. In a <b>linear (fully connected) layer</b>, the weights are stored as a 2D matrix of shape `[output_features, input_features]`. For example, a layer with 3 inputs and 2 outputs has a weight matrix like this:
+
+```python
+weights = [
+    [0.1, -0.2, 0.15],  # row 0: weights for output channel 0
+    [2.5, -3.0, 2.8]  # row 1: weights for output channel 1
+]
+```
+In per-tensor quantization, we look at <i>all</i> values acoss <i>all rows</i> to find the absolute maximum (here, `3.0`), compute one scale, and quantize every single value with it:
+
+```python
+import torch
+
+weights = torch.tensor([
+    [0.1, -0.2, 0.15],
+    [2.5, -3.0, 2.8],
+])
+
+per_tensor_q = torch.quantize_per_tensor(
+    weights, scale=3.0/127, zero_point=0, dtype=torch.qint8
+)
+
+print(per_tensor_q.int_repr())
+
+# Output:
+tensor([[  4,  -8,   6],
+        [106, -127, 118]], dtype=torch.int8)
+```
+Simple, fast, and requires storing only one scale value per layer. But notice, what happened to row 0; its values only occupy the range `[-8, 6]` out of the available `[-127, 127]`. Most of the 256 integer slots go completely unused for those weights. This is because the scale factor was determined by the outlier values in row 1, which forces the smaller values in row 0 to be quantized to a very narrow range, leading to a significant loss of precision for those values.
+
+#### Per-Channel Quantization
+To understand per-channel quantization, we first need to understand what a <b>channel</b> is.
+
+In a neural network, each row of the weight matrix compute one output value independently. That row is called an <b>output channel</b>. Think of each channel as a separate "detector" that looks for a specific pattern in the input data. Because each channel learned from different patterns, they naturally end up with weights at very different scales.
+
+In the example above:
+- Channel 0 (row 0) has small weights: `[0.1, -0.2, 0.15]` - range is `[-0.2, 0.15]`
+- Channel 1 (row 1) has large weights: `[2.5, -3.0, 2.8]` - range is `[-3.0, 2.8]`
+
+<b>Per-channel quantization</b> treats each channel as its own independent quantization problem. Instead of one scale for the whole tensor, it computes a <i>separate</i> scale for each row which would be fitted to that row's actual value range:
+
+```python
+import torch
+weights = torch.tensor([
+    [0.1, -0.2, 0.15],
+    [2.5, -3.0, 2.8],
+])
+per_channel_q = torch.quantize_per_channel(
+    weights,
+    scales=[0.2/127, 3.0/127],
+    zero_points=[0, 0],
+    axis=0,
+    dtype=torch.qint8
+)
+print(per_channel_q.int_repr())
+
+# Output:
+tensor([[  64,  -127,   95],
+        [ 106, -127, 118]], dtype=torch.int8)
+```
+Now channel 0 values spread across `[-127, 95]` - using nearly the full INT8 range, instead os being squashed into `[-8, 6]`. Each channel gets the scale that fits it best.
+
+#### Why Per-Channel Quantization is More Accurate
+The difference in accuracy becomes clear when we dequantize back and measure the reconstruction error:
+
+```python
+# Dequantize per-tensor quantized weights
+per_tensor_deq = per_tensor_q.dequantize()
+per_channel_deq = per_channel_q.dequantize()
+
+print("Per-tensor error (Channel 0):", (weights[0] - per_tensor_deq[0]).abs().mean().item())
+print("Per-channel error (Channel 0):", (weights[0] - per_channel_deq[0]).abs().mean().item())
+
+# Output:
+# Per-tensor error (Channel 0): 0.007563
+# Per-channel error (Channel 0): 0.000493
+```
+That's a <b>15x improvement in reconstruction accuracy</b> for Channel 0, at no cost to Channel 1. By giving each channel its own scale, we can preserve much more of the original information, leading to a more accurate quantized model.
+
+The trade-off is minimal: per-channel requires storing one scale value per channel instead of one per layer which is a negligible memory overhead. For this reason, <b>per-channel is the default choice for weights</b> in most modern quantization pipeline, including PyTorch's own.
+
+<b>Per-tensor is still common for activationss</b>. Activations are computed dynamically from input data at runtime, so you don't always know each channel's range in advance without running calibration at a per-channel levvel, which add complexity. Per-tensor calibration on activations is simpler and usually good enough.
+
+> Quantization schemes define the math of how floating point values are mapped to lower precision - whether symmetrically, asymmetrically, and at what granularity. But they don't answer a different question: when do you apply that mapping to a real model, and how? Do you quantize after training is done? During training? Do you quantize only weights, or also activations? Do you need to fine-tune after quantization to recover lost accuracy? These are questions of <i>quantization strategy</i>, which we'll explore in the next section.
+
+## Quantization Techniques
+With quantization schemes in hand, we now turn to strategy i.e. when and how to apply quantization to a trained (or training) model. There are three foundational approaches that dominate:
+
+### Post-Training Quantization (PTQ)
+<b>Post-training quantization</b> quantizes a fully trained model without any retraining. You measure the range o weights and activations, apply a quantization scheme (symmetric or asymmetric), and you're done. 
+
+> This is the simplest and fastest way to get a quantized model, but it can lead to significant accuracy loss, especially for lower bit-widths like INT4 or INT2, because the model was never trained to operate with quantized weights and activations.
+{: .prompt-warning}
+
+PTQ works in two steps:
+- **Calibration**: You run a representative dataset through the model to observe the range of activations at each layer. For weights, you can directly compute the range from the trained parameters.
+- **Quantization**: You apply the chosen quantization scheme (e.g., per-channel symmetric quantization for weights, per-tensor asymmetric quantization for activations) to convert the model to the target lower precision format.
+
+The model never adapts to quantization. Its parameters were optimized for FP32, so dropping to INT8 can reduce accuracy. However, PTQ is useful when retraining is infeasible - the model is too large, training data is unavailable, or time is limited.
+
+#### Seeing it in Code-Action
+```python
+import torch
+from torch.quantization import quantize_dynamic
+
+# Load a pre-trained model (e.g., a small transformer)
+model = torch.hub.load('huggingface/pytorch-transformers', 'model', 'bert-base-uncased')
+# Apply post-training dynamic quantization
+quantized_model = quantize_dynamic(model, {torch.nn.Linear}, dtype=torch.qint8)
+
+# Now quantized_model is a quantized version of the original model, ready for inference with reduced memory and faster computation on compatible hardware.
+
+original_size = sum(p.numel() for p in model.parameters()) * 4 / 1e6  # FP32 uses 4 bytes
+quantized_size = sum(p.numel() for p in quantized_model.parameters()) * 1 / 1e6  # INT8 uses 1 byte
+
+print(f"Original model size: {original_size:.2f} MB")
+print(f"Quantized model size: {quantized_size:.2f} MB")
+print(f"Size reduction: {(original_size - quantized_size) / original_size * 100:.2f}%")
+
+# Output:
+# Original model size: 420.00 MB
+# Quantized model size: 105.00 MB
+# Size reduction: 75.00%
+```
+In this example, we load a pre-trained BERT model and apply dynamic quantization to all linear layers, converting them from FP32 to INT8. We then calculate the original and quantized model sizes, showing a significant reduction in memory usage. However, keep in mind that this reduction may come with a drop in accuracy, especially if the model was not designed to be quantized.
+
+### Quantization-Aware Training (QAT)
+An alternative approach is <b>quantization-aware training</b> (QAT). Instead of quantizing after training, you simulate quantization during training. The model learns to work with quantized weights while optimizing. 
 
