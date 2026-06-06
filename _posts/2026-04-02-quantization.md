@@ -18,7 +18,9 @@ Imagine you want to run Llama 2 70B on your machine. There's just one problem: i
 
 Now what if you could shrink the model down to 35GB or even 17GB without losing much of its quality?
 
-That's what quanitzation does. It is the process of reducing the numerical precision of a model's weights and activations (for e.g. converting 32-bit floating point numbers to 8-bit integers) so that model gets smaller and its need less memory and compute to run. 
+That's what quanitzation does. It is the process of reducing the numerical precision of a model's weights and activations (for e.g. converting 32-bit floating point numbers to 8-bit integers) so that model gets smaller and its need less memory and compute to run.
+
+To understand how quantization works, we need to start with the foundation: how are numbers actually stored in neural networks? The storage format determines both the precision we get and the memory consumed.#
 
 ## Number Representation & Data Types
 Before we can shrink a model, we need to understand what we are shrinking. AI models internally perform mathematical operations on weights and activations, and how those parameters are stored determines both the precision & accuracy of the results and the memory model consumes.
@@ -93,6 +95,8 @@ FP16: 2.00 MB
 INT8: 1.00 MB
 ```
 In this example, we create a random tensor of shape (1000, 1000) which has 1 million elements. We then calculate the memory usage for FP32, FP16, and INT8 formats. As you can see, the memory usage decreases as we reduce the precision of the data type. Same tensor, same shape but 4x less memory just by changing the data type. Now if we scale this to a model with billions of parameters, the memory savings become significant, allowing us to run larger models on hardware with limited resources.
+
+Now we understood the different data types and how they impact memory usage. One might think: "Okay, just use INT8 and save memory!". But it's not that simple. One can't just convert FP32 values directly to INT8 - their ranges are completely different. PF32 can represent values from -3.4e38 to 3.4e38m while INT8 only goes from -128 to 127. We need a systemic way to map enormous FP32 range down to the tiny INT8 range without losing too much information. That systemic way is what <b><i>quantization schemes</i></b> are all about. 
 
 ## Quantization Schemes
 In practice, we do not need to map the entire FP32 range [-3.4e38, 3.4e38] to the smaller range of INT8 [-128, 127]. Instead, we need to find a way to map <b><i>the range of our data (the model's parameters and activations)</i></b> to the smaller range of the target data type.
@@ -297,11 +301,11 @@ The trade-off is minimal: per-channel requires storing one scale value per chann
 
 > Quantization schemes define the math of how floating point values are mapped to lower precision - whether symmetrically, asymmetrically, and at what granularity. But they don't answer a different question: when do you apply that mapping to a real model, and how? Do you quantize after training is done? During training? Do you quantize only weights, or also activations? Do you need to fine-tune after quantization to recover lost accuracy? These are questions of <i>quantization strategy</i>, which we'll explore in the next section.
 
-## Quantization Techniques
-With quantization schemes in hand, we now turn to strategy i.e. when and how to apply quantization to a trained (or training) model. There are three foundational approaches that dominate:
+## Applying Quantization to Model
+So farwe've learned how to map values - the mathematical schems (symmetric, asymmetric, per-tensor, per-channel, etc). Now we shift to a different question: how do we apply these schemes to a real model? When do we quantize - after training, during training, or some hybrid approach? Do we quantize only weights, or also activations? Do we need to fine-tune after quantization to recover lost accuracy? These choices define two foundational approaches to quantization strategy: <b>post-training quantization</b> and <b>quantization-aware training</b> and one key choice that applies to both: whether to quantize dynamically or statically.
 
 ### Post-Training Quantization (PTQ)
-<b>Post-training quantization</b> quantizes a fully trained model without any retraining. You measure the range o weights and activations, apply a quantization scheme (symmetric or asymmetric), and you're done. 
+<b>Post-training quantization</b> quantizes a fully trained model without any retraining. You measure the range of weights and activations, apply a quantization scheme (symmetric or asymmetric), and you're done. 
 
 > This is the simplest and fastest way to get a quantized model, but it can lead to significant accuracy loss, especially for lower bit-widths like INT4 or INT2, because the model was never trained to operate with quantized weights and activations.
 {: .prompt-warning}
@@ -339,5 +343,56 @@ print(f"Size reduction: {(original_size - quantized_size) / original_size * 100:
 In this example, we load a pre-trained BERT model and apply dynamic quantization to all linear layers, converting them from FP32 to INT8. We then calculate the original and quantized model sizes, showing a significant reduction in memory usage. However, keep in mind that this reduction may come with a drop in accuracy, especially if the model was not designed to be quantized.
 
 ### Quantization-Aware Training (QAT)
-An alternative approach is <b>quantization-aware training</b> (QAT). Instead of quantizing after training, you simulate quantization during training. The model learns to work with quantized weights while optimizing. 
+An alternative approach is <b>quantization-aware training</b> (QAT). Instead of quantizing after training, you simulate quantization during training. The model learns to work with quantized weights while optimizing.
 
+QAT uses <b>fake quantization</b> nodes during the forward pass to mimic the effects of quantization. The weights and activations are quantized to the target precision during training, but the gradients are computed in full precision. This allows the model to adapt to the quanitzation error as it trains.
+
+The workflow for QAT is:
+1. **Prepare**: Insert fake quantization nodes into the model architecture. These nodes simulate the quantization process during training.
+2. **Calibrate**: Run trainin data through the model so fake quantization nodes can observe the range of activations and adjust their parameters accordingly.
+3. **Train**: Train the model as usual. Weights are quantized during the forward pass, but gradients are computed in full precision, allowing the model to learn to compensate for quantization errors.
+4. **Convert**: After training, replace fake quantization nodes with actual quantization to create the final quantized model.
+
+QAT typically achieves much better accuracy than PTQ, especially for lower bit-widths, because the model has been trained to operate with quantized weights and activations. However, it requires more time and computational resources due to the need for retraining.
+
+#### Seeing it in Code-Action
+```python
+import torch
+import torch.nn as nn
+import torch.quantization import prepare_qat, convert
+
+model = torch.hub.load('huggingface/pytorch-transformers', 'model', 'bert-base-uncased')
+model.eval()  # Set to evaluation mode before preparing for QAT
+
+# Prepare the model for quantization-aware training
+model.qconfig = torch.quantization.get_default_qat_qconfig('fbgemm')
+prepare_qat(model, inplace=True)
+
+# Now you would train `prepared_model` on your training data for several epochs
+optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
+criterion = nn.CrossEntropyLoss()
+
+fake_data = torch.randn(32, 128)  # Example input data
+fake_labels = torch.randint(0, 2, (32,))  # Example labels
+
+model.train()  # Set to training mode for QAT
+for epoch in range(5):  # Simulate training loop
+    optimizer.zero_grad()
+    outputs = model(fake_data)
+    loss = criterion(outputs, fake_labels)
+    loss.backward()
+    optimizer.step()
+    print(f"Epoch {epoch+1}, Loss: {loss.item():.4f}")
+
+# After training, convert the model to a quantized version
+model.eval()  # Set to evaluation mode before conversion
+quantized_model = convert(model)
+```
+
+### Dynamic vs Static Quantization
+Activations of model can be quantized in two ways: <b>dynamic</b> and <b>static</b> quantization.
+- <b>Dynamic quantization</b> quantizes activations on-the-fly during inference. The scale factor is computed dynamically based on the input data at runtime. This is simpler to implement and doesn't require calibration, but it can lead to less accurate quantization because the model doesn't know in advance what range of activation values to expect.
+- <b>Static quantization</b> requires a calibration step where you run a representative dataset through the model to observe the range of activations at each layer. The scale factors are then fixed based on this observed range. This can lead to better accuracy, especially for lower bit-widths, because the model has a better understanding of the activation distributions, but it requires additional effort for calibration.
+
+> Static quantization is generally preferred for activations when accuracy is a concern, while dynamic quantization can be a good choice for quick and easy quantization when some loss in accuracy is acceptable.
+{.prompt-info}
