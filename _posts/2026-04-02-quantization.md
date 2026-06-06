@@ -6,7 +6,7 @@ math: true
 description: 'An in-depth exploration of quantization techniques for model compression and efficiency.'
 toc: true
 image:
-    path: assets/headers/dspy-header.png
+    path: assets/headers/quantization-header.png
     alt: Quantization
 published: true
 categories: [LLMs, Quantization]
@@ -395,4 +395,7 @@ Activations of model can be quantized in two ways: <b>dynamic</b> and <b>static<
 - <b>Static quantization</b> requires a calibration step where you run a representative dataset through the model to observe the range of activations at each layer. The scale factors are then fixed based on this observed range. This can lead to better accuracy, especially for lower bit-widths, because the model has a better understanding of the activation distributions, but it requires additional effort for calibration.
 
 > Static quantization is generally preferred for activations when accuracy is a concern, while dynamic quantization can be a good choice for quick and easy quantization when some loss in accuracy is acceptable.
-{.prompt-info}
+{: .prompt-info}
+
+## Conclusion
+Quantization is a powerful technique for reducing the memory footprint and computational requirements of deep learning models, enabling them to run on resource-constrained devices. By understanding the different quantization schemes (symmetric vs asymmetric, per-tensor vs per-channel) and strategies (post-training quantization vs quantization-aware training), one can make informed decisions about how to apply quantization to your models while balancing the trade-offs between accuracy and efficiency.
